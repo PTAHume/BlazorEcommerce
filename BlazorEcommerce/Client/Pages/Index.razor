@@ -1,0 +1,58 @@
+﻿@page "/"
+@page "/search/{searchText}/{page:int}"
+@page "/{categoryUrl}"
+@page "/{categoryUrl}/{page:int}"
+@inject IProductService ProductService
+@inject IStatsService StatsService
+
+<PageTitle>My Shop</PageTitle>
+
+@if (SearchText == null && CategoryUrl == null)
+{
+    <FeaturedProducts />
+}
+else
+{
+    <ProductList />
+}
+
+Visits : @Visits
+
+@code {
+    public int Visits { get; set; } = 0;
+
+    [Parameter]
+    public string? CategoryUrl { get; set; } = null;
+
+    [Parameter]
+    public string? SearchText { get; set; } = null;
+
+    [Parameter]
+    public int Page { get; set; } = 1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SearchText != null)
+        {
+            await ProductService.SearchProducts(SearchText, Page);
+        }
+        else
+        {
+            await ProductService.GetProducts(Page, CategoryUrl);
+        }
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        StatsService.OnChange += StateHasChanged;
+        await StatsService.IncrementVisits();
+        Visits = await StatsService.GetVisits();
+
+    }
+
+    public void Dispose()
+    {
+        StatsService.OnChange -= StateHasChanged;
+    }
+}

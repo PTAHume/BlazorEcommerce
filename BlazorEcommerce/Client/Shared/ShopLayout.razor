@@ -1,0 +1,25 @@
+﻿@inherits LayoutComponentBase
+@inject IToastService toastService
+
+<div class="page">
+    <main>
+        <div class="top-row px-2">
+            <HomeButton />
+            <Search />
+            <UserButton />
+            <CartCounter />
+        </div>
+
+        <div class="nav-menu">
+            <ShopNavMenu />
+        </div>
+
+        <article class="content px-2">
+            @Body
+        </article>
+    </main>
+</div>
+<BlazoredToasts />
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />

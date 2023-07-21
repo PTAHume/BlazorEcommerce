@@ -1,0 +1,104 @@
+﻿@page "/profile"
+@inject IAuthService AuthService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+@using System.ComponentModel
+@using Smart.Blazor
+
+
+<AuthorizeView>
+    <h3>Hi! You're logged in with <i>@context.User.Identity.Name</i>.</h3>
+</AuthorizeView>
+
+<h5>Delivery Address</h5>
+<AddressForm />
+<p></p>
+
+<h5>Change Password</h5>
+<p></p>
+
+<EditForm Model="request" OnValidSubmit="ChangePassword">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label for="password">New Password</label>
+        <template id="tooltip-password">
+            <span>{{value}}</span>
+        </template>
+        <PasswordTextBox Required Id="password" TooltipArrow TooltipTemplate="tooltip-password" Placeholder="Enter password" @bind-Value="request.Password" ShowPasswordIcon ShowPasswordStrength Name="password"></PasswordTextBox>
+        <ValidationMessage For="@(() => request.Password)" />
+    </div>
+    <div class="mb-3">
+        <label for="confirmPassword">Confirm New Password</label>
+        <PasswordTextBox Class="form-control" Id="confirmPassword" Required Placeholder="Confirm password" @bind-Value="request.ConfirmPassword" ShowPasswordIcon Name="confirmPassword"></PasswordTextBox>
+        <ValidationMessage For="@(() => request.ConfirmPassword)" />
+    </div>
+    <button type="submit" id="submit" disabled="@(!isComplexityValid || loading)" class="btn btn-primary">
+        @if (loading)
+        {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span class="sr-only">Processing...</span>
+        }
+        else
+        {
+            <span class="sr-only">Apply</span>
+        }
+    </button>
+</EditForm>
+
+<br />
+<div>
+    <span class="@($"smart-badge {messageCssClass}")">@message</span>
+</div>
+<br />
+<br />
+<br />
+@code {
+    UserChangePassword request = new UserChangePassword();
+    private string message = string.Empty;
+    private bool isComplexityValid = false;
+    private bool loading = false;
+    private string messageCssClass = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeAsync<bool>("customStrength", DotNetObjectReference.Create(this));
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    [JSInvokable, EditorBrowsable(EditorBrowsableState.Never)]
+    public void CallbackComplexityCheck(bool valid)
+    {
+        if (isComplexityValid != valid)
+        {
+            isComplexityValid = valid;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        var result = await AuthService.ChangePassword(request);
+
+        if (result.Success)
+        {
+            messageCssClass = "smart-badge-success";
+        }
+        else
+        {
+            messageCssClass = "smart-badge-danger";
+
+        }
+        request.ConfirmPassword = "";
+        request.Password = "";
+        loading = false;
+        message = result.Message;
+
+        await JSRuntime.InvokeAsync<bool>("customStrength", DotNetObjectReference.Create(this));
+
+        StateHasChanged();
+    }
+}

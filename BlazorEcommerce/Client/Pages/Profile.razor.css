@@ -1,0 +1,43 @@
+﻿::deep smart-password-text-box.smart-element {
+    background-clip: content-box;
+    box-sizing: border-box;
+    width: 100%;
+    height: 2.5em;
+}
+
+    ::deep smart-password-text-box.smart-element[focus] {
+        box-shadow: 0 0 0 0.25rem rgb(13 110 253 / 25%);
+    }
+
+::deep smart-password-text-box[show-password-strength] .smart-password-short {
+    border: red solid 1px;
+    border-radius: 0.25rem;
+}
+
+::deep smart-password-text-box[show-password-strength] .smart-password-weak {
+    border: #C27BA0 solid 3px;
+    border-radius: 0.25rem;
+}
+
+::deep smart-password-text-box[show-password-strength] .smart-password-far {
+    border: orange solid 3px;
+    border-radius: 0.25rem;
+}
+
+::deep smart-password-text-box[show-password-strength] .smart-password-better {
+    border: yellow solid 3px;
+    border-radius: 0.25rem;
+}
+
+::deep smart-password-text-box[show-password-strength] .smart-password-good {
+    border: deepskyblue solid 3px;
+    border-radius: 0.25rem;
+}
+
+::deep smart-password-text-box[show-password-strength] .smart-password-strong {
+    border: #26b050 solid 1px;
+}
+
+::deep smart-password-text-box smart-tooltip .smart-tooltip-content {
+    border-radius: 3px;
+}

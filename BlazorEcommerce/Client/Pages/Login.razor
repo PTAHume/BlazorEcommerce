@@ -1,0 +1,128 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.WebUtilities
+@inject IAuthService AuthService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICartService CartService
+
+<PageTitle>Login</PageTitle>
+
+<h3>Login</h3>
+
+<EditForm Model="user" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label for="email">Email</label>
+        <InputText id="email" @bind-Value="user.Email" class="form-control" />
+        <ValidationMessage For="@(() => user.Email)" />
+    </div>
+    <div class="mb-3">
+        <label for="password">Password</label>
+        <InputText id="password" @bind-Value="user.Password" class="form-control" type="password" />
+        <ValidationMessage For="@(() => user.Password)" />
+    </div>
+    <button disabled=@loading type="submit" class="btn btn-primary">
+        @if (loading)
+        {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span class="sr-only">Processing...</span>
+        }
+        else
+        {
+            <span class="sr-only">Login</span>
+        }
+    </button>
+    <button disabled=@loading onclick="@(() => ForgotPassword())" class="btn btn-outline-info">
+        @if (loading)
+        {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span class="sr-only">Processing...</span>
+        }
+        else
+        {
+            <span class="sr-only">Forgot Password</span>
+        }
+    </button>
+</EditForm>
+<br />
+<br />
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <span class="smart-badge smart-badge-success">@successMessage</span>
+}
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <span class="smart-badge smart-badge-danger">@errorMessage</span>
+}
+
+@code {
+    private UserLogin user = new UserLogin();
+
+    private bool loading = false;
+
+    private string errorMessage = string.Empty;
+
+    private string successMessage = string.Empty;
+
+    private string returnUrl = string.Empty;
+    private EditContext EC { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var url))
+        {
+            returnUrl = url;
+        }
+        EC = new EditContext(user);
+        base.OnInitialized();
+    }
+
+    async Task ForgotPassword()
+    {
+        if (!string.IsNullOrWhiteSpace(user.Email))
+        {
+            loading = true;
+            user.Password = "ForgotPassword";
+            var result = await AuthService.ForgotPassword(user);
+            if (!result.Success)
+            {
+                errorMessage = result.Message;
+            }
+            else
+            {
+                successMessage = result.Message;
+            }
+            user.Password = "";
+            loading = false;
+            EC.NotifyFieldChanged(EC.Field("Password"));
+            StateHasChanged();
+        }
+        else
+        {
+
+            EC.Validate();
+        }
+
+    }
+
+    private async Task HandleLogin()
+    {
+        var result = await AuthService.Login(user);
+        if (result.Success)
+        {
+            errorMessage = string.Empty;
+
+            await LocalStorage.SetItemAsync("authToken", result.Data);
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            await CartService.StoreCartItems(true);
+            await CartService.GetCartItemsCount();
+            NavigationManager.NavigateTo(returnUrl);
+        }
+        else
+        {
+            errorMessage = result.Message;
+        }
+    }
+}

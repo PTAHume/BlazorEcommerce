@@ -1,0 +1,57 @@
+﻿@page "/email-confirmation"
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Email confirmation</PageTitle>
+
+<h3>Email Confirmation</h3>
+
+@if (!string.IsNullOrWhiteSpace(DataVerification))
+{
+    <div>
+        <span class="@($"smart-badge {messageCssClass}")">@message</span>
+    </div>
+}
+else
+{
+    <span>Awaiting Email token...</span>
+}
+<br />
+@if (!string.IsNullOrEmpty(messageCssClass))
+{
+    <br />
+    <button type="button" class="btn btn-outline-dark" @onclick="(() => GoToLogin())">Proceed to log in page</button>
+}
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? DataVerification { get; set; } = null;
+    private string message = string.Empty;
+    private string messageCssClass = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(DataVerification))
+        {
+            var result = await AuthService.ConfrimEmail(DataVerification);
+
+            if (result.Success)
+            {
+                messageCssClass = "smart-badge-success";
+            }
+            else
+            {
+                messageCssClass = "smart-badge-danger";
+            }
+            message = result.Message;
+            StateHasChanged();
+        }
+
+        await base.OnParametersSetAsync();
+    }
+
+    public void GoToLogin()
+    {
+        NavigationManager.NavigateTo("login");
+    }
+}
